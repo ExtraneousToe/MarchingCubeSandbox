@@ -6,17 +6,19 @@ public static class MarchCubes
 {
     public static float Surface { get; set; }
 
-    public static void March(Voxel[,,] voxelGrid, IList<Vector3> verts, IList<int> indices, IList<Color> colours)
+    public static void March(Voxel[,,] voxelGrid, IList<Vector3> verts, IList<int> indices, IList<Color> colours, bool useValues = false)
     {
-        int chunkSize = voxelGrid.GetLength(0);
+        int chunkSizeX = voxelGrid.GetLength(0);
+        int chunkSizeY = voxelGrid.GetLength(1);
+        int chunkSizeZ = voxelGrid.GetLength(2);
 
-        Voxel[] cubeCorners = new Voxel[8];
+		Voxel[] cubeCorners = new Voxel[8];
 
-        for (int x = 0; x < chunkSize - 1; x++)
+        for (int x = 0; x < chunkSizeX - 1; x++)
         {
-            for (int y = 0; y < chunkSize - 1; y++)
+            for (int y = 0; y < chunkSizeY - 1; y++)
             {
-                for (int z = 0; z < chunkSize - 1; z++)
+                for (int z = 0; z < chunkSizeZ - 1; z++)
                 {
                     for (int i = 0; i < 8; i++)
                     {
@@ -27,13 +29,13 @@ public static class MarchCubes
                         cubeCorners[i] = voxelGrid[ix,iy,iz];
                     }
 
-                    MarchCube(x, y, z, cubeCorners, verts, indices, colours);
+                    MarchCube(x, y, z, cubeCorners, verts, indices, colours, useValues);
                 }
             }
         }
     }
 
-    private static void MarchCube(int x, int y, int z, Voxel[] cube, IList<Vector3> vertList, IList<int> indexList, IList<Color> colourList)
+    private static void MarchCube(int x, int y, int z, Voxel[] cube, IList<Vector3> vertList, IList<int> indexList, IList<Color> colourList, bool useValues = false)
     {
         Vector3[] EdgeVertex = new Vector3[12];
 		Voxel[] cubeUnderSurface = new Voxel[12];
@@ -43,7 +45,7 @@ public static class MarchCubes
         float offset = 0.0f;
 
         //Find which vertices are inside of the surface and which are outside
-        for (i = 0; i < 8; i++) if (IsWithinSurface(cube[i], true)) flagIndex |= 1 << i;
+        for (i = 0; i < 8; i++) if (IsWithinSurface(cube[i], useValues)) flagIndex |= 1 << i;
 
         //Find which edges are intersected by the surface
         int edgeFlags = CubeEdgeFlags[flagIndex];
@@ -61,9 +63,9 @@ public static class MarchCubes
 				v0 = cube[EdgeConnection[i, 0]];
 				v1 = cube[EdgeConnection[i, 1]];
 
-				offset = GetOffset(v0.Value, v1.Value);
+				offset = GetOffset(v0.Value, v1.Value, useValues);
 
-				cubeUnderSurface[i] = IsWithinSurface(v0, true) ? v0 : v1;
+				cubeUnderSurface[i] = IsWithinSurface(v0, useValues) ? v0 : v1;
 				
 				EdgeVertex[i].x = x + (VertexOffset[EdgeConnection[i, 0], 0] + offset * EdgeDirection[i, 0]);
                 EdgeVertex[i].y = y + (VertexOffset[EdgeConnection[i, 0], 1] + offset * EdgeDirection[i, 1]);
@@ -95,13 +97,13 @@ public static class MarchCubes
         }
     }
 
-    private static Dictionary<EVoxelType, Color> TypeColourPairs = new Dictionary<EVoxelType, Color>
+    private static Dictionary<byte, Color> TypeColourPairs = new Dictionary<byte, Color>
     {
-        [EVoxelType.Bedrock] = Color.grey / 2,
-        [EVoxelType.Rock] = Color.grey,
-        [EVoxelType.Dirt] = new Color(130/255f, 76/255f, 0),
-        [EVoxelType.Sand] = Color.yellow,
-        [EVoxelType.Air] = Color.clear,
+        [0] = Color.clear,
+        [1] = Color.grey / 2,
+        [2] = Color.grey, 
+        [3] = new Color(130/255f, 76/255f, 0),
+        [4] = Color.yellow,
     };
 
 	private static bool IsWithinSurface(Voxel v, bool useValue = false)
@@ -112,11 +114,11 @@ public static class MarchCubes
 		}
 		else
 		{
-			return v.VoxelType != EVoxelType.Air;
+			return v.VoxelType != 0;
 		}
 	}
 
-    private static float GetOffset(float v1, float v2)
+    private static float GetOffset(float v1, float v2, bool useValue = false)
     {
         return 0.5f;
 
@@ -124,8 +126,8 @@ public static class MarchCubes
         return (delta == 0.0f) ? Surface : (Surface - v1) / delta;
     }
 
-    private static int[] WindingOrder = new int[] { 0, 1, 2 };
-    //private static int[] WindingOrder = new int[] { 2, 1, 0 };
+    //private static int[] WindingOrder = new int[] { 0, 1, 2 };
+    private static int[] WindingOrder = new int[] { 2, 1, 0 };
 
     /// <summary>
     /// VertexOffset lists the positions, relative to vertex0, 

@@ -36,8 +36,12 @@ public class ChunkGenerator : MonoBehaviour
 	private Mesh internalMesh;
 
 	[SerializeField]
-	[Range(8, 32)]
-	private int chunkSize = 32;
+	[Range(8, 64)]
+	private int chunkSizeXZ = 48;
+
+	[SerializeField]
+	[Range(8, 64)]
+	private int chunkHeight = 32;
 
 	private Voxel[,,] voxelGrid;
 
@@ -56,7 +60,18 @@ public class ChunkGenerator : MonoBehaviour
 
 	[SerializeField]
 	private int m_worldResolution = 64;
-	
+
+	[SerializeField]
+	private bool m_useValues = true;
+
+	[SerializeField]
+	private NoiseLayerScriptable m_rockNoiseLayer;
+	public NoiseLayerScriptable RockNoiseLayer => m_rockNoiseLayer;
+
+	[SerializeField]
+	private NoiseLayerScriptable m_dirtNoiseLayer;
+	public NoiseLayerScriptable DirtNoiseLayer => m_dirtNoiseLayer;
+
 	protected void Reset()
 	{
 		meshFilter = GetComponent<MeshFilter>();
@@ -94,13 +109,13 @@ public class ChunkGenerator : MonoBehaviour
 	private void InitialiseGrid()
 	{
 		// check size and state first
-		voxelGrid = new Voxel[chunkSize, chunkSize, chunkSize];
+		voxelGrid = new Voxel[chunkSizeXZ, chunkHeight, chunkSizeXZ];
 
-		for (int x = 0; x < chunkSize; x++)
+		for (int x = 0; x < chunkSizeXZ; x++)
 		{
-			for (int y = 0; y < chunkSize; y++)
+			for (int y = 0; y < chunkHeight; y++)
 			{
-				for (int z = 0; z < chunkSize; z++)
+				for (int z = 0; z < chunkSizeXZ; z++)
 				{
 					voxelGrid[x, y, z] = new Voxel(new Vector3Int(x, y, z));
 				}
@@ -110,32 +125,79 @@ public class ChunkGenerator : MonoBehaviour
 
 	public void InitialiseVoxels()
 	{
+		if (RockNoiseLayer) RockNoiseLayer.Initialise();
+		if (DirtNoiseLayer) DirtNoiseLayer.Initialise();
+
 		INoise noise = GetNoise(m_noiseType, 0, m_frequency, m_amplitude);
 		FractalNoise fractalNoise = new FractalNoise(noise, m_octaves, m_frequency, m_amplitude);
 
-		for (int x = 0; x < chunkSize; x++)
+		for (int x = 0; x < chunkSizeXZ; x++)
 		{
-			for (int z = 0; z < chunkSize; z++)
+			for (int z = 0; z < chunkSizeXZ; z++)
 			{
-				float bedrockHeight = 0;
-				float rockHeight = 3;
-				float dirtHeight = 9;
-				float sandHeight = 12;
+				float bedrockHeight = 2;
+				float rockHeight = 0;
+				float dirtHeight = 0;
+				//float sandHeight = 12;
 
-				for (int y = 0; y < chunkSize; y++)
+				if (RockNoiseLayer)
 				{
-
-					float yHeight = fractalNoise.Sample3D(
+					rockHeight += RockNoiseLayer.SampleValue(
 						x / (float)(m_worldResolution - 1),
-						y / (float)(m_worldResolution - 1),
 						z / (float)(m_worldResolution - 1)
 					);
+				}
 
+				if (DirtNoiseLayer)
+				{
+					dirtHeight += DirtNoiseLayer.SampleValue(
+						x / (float)(m_worldResolution - 1),
+						z / (float)(m_worldResolution - 1)
+					);
+				}
+
+				for (int y = 0; y < chunkHeight; y++)
+				{
 					Voxel v = voxelGrid[x, y, z];
 
-					v.Value = yHeight;
+					if (x == 0 || x == chunkSizeXZ - 1 ||
+						y == 0 || y == chunkHeight - 1 ||
+						z == 0 || z == chunkSizeXZ - 1)
+					{
+						v.VoxelType = 0;
+						v.Value = 0;
+					}
+					else
+					{
+						if (y <= bedrockHeight)
+						{
+							v.VoxelType = 1;
+						}
+						else if (y <= rockHeight)
+						{
+							v.VoxelType = 2;
+						}
+						else if (y <= dirtHeight)
+						{
+							v.VoxelType = 3;
+						}
+						//else if (y <= sandHeight)
+						//{
+						//	v.VoxelType = 4;
+						//}
+						else
+						{
+							v.VoxelType = 0;
+						}
 
-					v.VoxelType = (byte)y;
+						float pointValue = fractalNoise.Sample3D(
+							x / (float)(m_worldResolution - 1),
+							y / (float)(m_worldResolution - 1),
+							z / (float)(m_worldResolution - 1)
+						);
+
+						v.Value = pointValue;
+					}
 				}
 			}
 		}
@@ -173,7 +235,7 @@ public class ChunkGenerator : MonoBehaviour
 		List<int> triangles = new List<int>();
 		List<Color> colours = new List<Color>();
 
-		MarchCubes.March(voxelGrid, verticies, triangles, colours);
+		MarchCubes.March(voxelGrid, verticies, triangles, colours, m_useValues);
 
 		internalMesh.Clear();
 		internalMesh.vertices = verticies.ToArray();
