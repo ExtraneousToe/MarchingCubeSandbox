@@ -36,14 +36,14 @@ public static class MarchCubes
     private static void MarchCube(int x, int y, int z, Voxel[] cube, IList<Vector3> vertList, IList<int> indexList, IList<Color> colourList)
     {
         Vector3[] EdgeVertex = new Vector3[12];
-
-        int i, j, vert, idx;
+		Voxel[] cubeUnderSurface = new Voxel[12];
+		
+		int i, j, vert, idx;
         int flagIndex = 0;
         float offset = 0.0f;
 
         //Find which vertices are inside of the surface and which are outside
-        //for (i = 0; i < 8; i++) if (cube[i].VoxelType != EVoxelType.Air) flagIndex |= 1 << i;
-        for (i = 0; i < 8; i++) if (cube[i].Value <= Surface) flagIndex |= 1 << i;
+        for (i = 0; i < 8; i++) if (IsWithinSurface(cube[i], true)) flagIndex |= 1 << i;
 
         //Find which edges are intersected by the surface
         int edgeFlags = CubeEdgeFlags[flagIndex];
@@ -57,9 +57,15 @@ public static class MarchCubes
             //if there is an intersection on this edge
             if ((edgeFlags & (1 << i)) != 0)
             {
-                offset = GetOffset(cube[EdgeConnection[i, 0]].Value, cube[EdgeConnection[i, 1]].Value);
+				Voxel v0, v1;
+				v0 = cube[EdgeConnection[i, 0]];
+				v1 = cube[EdgeConnection[i, 1]];
 
-                EdgeVertex[i].x = x + (VertexOffset[EdgeConnection[i, 0], 0] + offset * EdgeDirection[i, 0]);
+				offset = GetOffset(v0.Value, v1.Value);
+
+				cubeUnderSurface[i] = IsWithinSurface(v0, true) ? v0 : v1;
+				
+				EdgeVertex[i].x = x + (VertexOffset[EdgeConnection[i, 0], 0] + offset * EdgeDirection[i, 0]);
                 EdgeVertex[i].y = y + (VertexOffset[EdgeConnection[i, 0], 1] + offset * EdgeDirection[i, 1]);
                 EdgeVertex[i].z = z + (VertexOffset[EdgeConnection[i, 0], 2] + offset * EdgeDirection[i, 2]);
             }
@@ -79,26 +85,36 @@ public static class MarchCubes
                 indexList.Add(idx + WindingOrder[j]);
                 vertList.Add(EdgeVertex[vert]);
 
-                Voxel vox = cube[
-                    (int)Mathf.Clamp(TriangleToCornerTable[flagIndex, triIndex], 0, 7)
-                ];
+				Voxel vox = cubeUnderSurface[vert];
 
-                if (TypeColourPairs.TryGetValue(vox.VoxelType, out Color vertColour))
-                    colourList.Add(vertColour);
-                else
-                    colourList.Add(Color.white);
+				if (TypeColourPairs.TryGetValue(vox.VoxelType, out Color vertColour))
+				    colourList.Add(vertColour);
+				else
+					colourList.Add(Color.red);
             }
         }
     }
 
     private static Dictionary<EVoxelType, Color> TypeColourPairs = new Dictionary<EVoxelType, Color>
     {
-        [EVoxelType.Bedrock] = Color.black,
+        [EVoxelType.Bedrock] = Color.grey / 2,
         [EVoxelType.Rock] = Color.grey,
         [EVoxelType.Dirt] = new Color(130/255f, 76/255f, 0),
         [EVoxelType.Sand] = Color.yellow,
         [EVoxelType.Air] = Color.clear,
     };
+
+	private static bool IsWithinSurface(Voxel v, bool useValue = false)
+	{
+		if (useValue)
+		{
+			return v.Value <= Surface;
+		}
+		else
+		{
+			return v.VoxelType != EVoxelType.Air;
+		}
+	}
 
     private static float GetOffset(float v1, float v2)
     {
@@ -108,8 +124,8 @@ public static class MarchCubes
         return (delta == 0.0f) ? Surface : (Surface - v1) / delta;
     }
 
-    //private static int[] WindingOrder = new int[] { 0, 1, 2 };
-    private static int[] WindingOrder = new int[] { 2, 1, 0 };
+    private static int[] WindingOrder = new int[] { 0, 1, 2 };
+    //private static int[] WindingOrder = new int[] { 2, 1, 0 };
 
     /// <summary>
     /// VertexOffset lists the positions, relative to vertex0, 

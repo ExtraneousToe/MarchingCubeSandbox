@@ -45,5 +45,5 @@ Shader "Custom/ExampleVertexColorShader"
              ENDCG
          }
      }
-     FallBack "Diffuse"
+     //FallBack "Diffuse"
 }
