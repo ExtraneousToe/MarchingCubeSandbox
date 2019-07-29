@@ -31,19 +31,26 @@ public class ChunkGenerator : MonoBehaviour
 {
 	[SerializeField]
 	private MeshFilter meshFilter;
+	public MeshFilter MeshFilter => meshFilter;
 	[SerializeField]
 	private MeshRenderer meshRenderer;
+	[SerializeField]
+	private MeshCollider meshCollider;
+	[SerializeField]
 	private Mesh internalMesh;
 
 	[SerializeField]
 	[Range(8, 64)]
 	private int chunkSizeXZ = 48;
+	public int ChunkSizeXZ => chunkSizeXZ;
 
 	[SerializeField]
 	[Range(8, 64)]
 	private int chunkHeight = 32;
+	public int ChunkHeight => chunkHeight;
 
 	private Voxel[,,] voxelGrid;
+	public Voxel[,,] VoxelGrid => voxelGrid;
 
 	[SerializeField]
 	private NOISE_TYPE m_noiseType = NOISE_TYPE.PERLIN;
@@ -60,6 +67,7 @@ public class ChunkGenerator : MonoBehaviour
 
 	[SerializeField]
 	private int m_worldResolution = 64;
+	public int WorldResolution => m_worldResolution;
 
 	[SerializeField]
 	private bool m_useValues = true;
@@ -76,6 +84,7 @@ public class ChunkGenerator : MonoBehaviour
 	{
 		meshFilter = GetComponent<MeshFilter>();
 		meshRenderer = GetComponent<MeshRenderer>();
+		meshCollider = GetComponent<MeshCollider>();
 	}
 
 	[ContextMenu("Validate")]
@@ -94,16 +103,21 @@ public class ChunkGenerator : MonoBehaviour
 
 	private void CheckInitialised()
 	{
+		meshFilter = meshFilter ?? GetComponent<MeshFilter>();
+		meshRenderer = meshRenderer ?? GetComponent<MeshRenderer>();
+		meshCollider = meshCollider ?? GetComponent<MeshCollider>();
+
 		InitialiseGrid();
 
 		if (internalMesh == null)
 		{
 			internalMesh = new Mesh();
 			internalMesh.name = $"VoxelGrid";
-			internalMesh.MarkDynamic();
+			//internalMesh.MarkDynamic();
 		}
 
 		meshFilter.sharedMesh = internalMesh;
+		meshCollider.sharedMesh = internalMesh;
 	}
 
 	private void InitialiseGrid()
@@ -227,7 +241,7 @@ public class ChunkGenerator : MonoBehaviour
 		}
 	}
 
-	private void GenerateMesh()
+	public void GenerateMesh()
 	{
 		if (!internalMesh) return;
 
@@ -243,5 +257,7 @@ public class ChunkGenerator : MonoBehaviour
 		internalMesh.colors = colours.ToArray();
 
 		internalMesh.RecalculateNormals();
+		
+		meshCollider.sharedMesh = internalMesh;
 	}
 }
