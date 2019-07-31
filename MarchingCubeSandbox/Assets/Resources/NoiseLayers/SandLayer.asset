@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 681f5e0fe5bc36d4a87274a5ac5f299a, type: 3}
-  m_Name: RockLayer
+  m_Name: SandLayer
   m_EditorClassIdentifier: 
-  m_noiseType: 0
-  m_seed: 10
-  m_octaves: 14
+  m_noiseType: 1
+  m_seed: 0
+  m_octaves: 3
   m_frequency: 1
-  m_noiseAmplitude: 0.5
-  m_fractalAmplitude: 28.02
-  m_raiseHeight: 3
+  m_noiseAmplitude: 1
+  m_fractalAmplitude: 1
+  m_raiseHeight: 15

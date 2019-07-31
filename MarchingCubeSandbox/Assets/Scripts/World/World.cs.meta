@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 1376bd61cd4f77f4dbed3b0445540f03
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - m_rockNoiseLayer: {fileID: 11400000, guid: 6847a8b0419e6d9498e762c8242feade, type: 2}
+  - m_dirtNoiseLayer: {fileID: 11400000, guid: 6f1bae107713ca24fbdc795140ab281a, type: 2}
+  - m_sandNoiseLayer: {fileID: 11400000, guid: 3a9a930c57911a440a99d11fdab290a5, type: 2}
+  - m_chunkPrefab: {fileID: 8332653447909016789, guid: 8ca555b259a2da940826b914b8ee1b92,
+      type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

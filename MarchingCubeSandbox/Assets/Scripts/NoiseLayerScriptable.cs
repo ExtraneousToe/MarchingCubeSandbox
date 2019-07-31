@@ -8,6 +8,10 @@ using ProceduralNoiseProject;
 public class NoiseLayerScriptable : ScriptableObject
 {
 	[SerializeField]
+	private bool isEnabled = false;
+	public bool IsEnabled => isEnabled;
+
+	[SerializeField]
 	private NOISE_TYPE m_noiseType = NOISE_TYPE.PERLIN;
 	public NOISE_TYPE NoiseType => m_noiseType;
 
@@ -45,6 +49,8 @@ public class NoiseLayerScriptable : ScriptableObject
 
 	public float SampleValue(float x, float z)
 	{
+		if (!IsEnabled) return 0;
+
 		//return RaiseHeight + (fracNoise.Sample2D(x, z) + fracNoise.Amplitude * fracNoise.Noises.Max(n => n.Amplitude));
 		return RaiseHeight + fracNoise.Sample2D(x, z);
 	}
