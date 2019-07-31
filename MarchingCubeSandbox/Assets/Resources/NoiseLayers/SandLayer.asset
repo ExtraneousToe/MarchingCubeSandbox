@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: SandLayer
   m_EditorClassIdentifier: 
   isEnabled: 1
-  m_noiseType: 2
+  m_noiseType: 0
   m_seed: 0
   m_octaves: 1
-  m_frequency: 2.56
-  m_noiseAmplitude: 2.28
+  m_frequency: 1
+  m_noiseAmplitude: 0.88
   m_fractalAmplitude: 2.04
   m_raiseHeight: 12

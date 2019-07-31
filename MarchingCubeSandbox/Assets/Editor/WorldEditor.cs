@@ -46,24 +46,36 @@ namespace CellWorld
 
 			if (RockNoiseEditor)
 			{
-				DrawEditor(RockNoiseEditor, "Rock");
+				if (rockDropdown = EditorGUILayout.Foldout(rockDropdown, "Rock"))
+				{
+					DrawEditor(RockNoiseEditor, "Rock");
+				}
 			}
 
 			if (DirtNoiseEditor)
 			{
-				DrawEditor(DirtNoiseEditor, "Dirt");
+				if (dirtDropdown = EditorGUILayout.Foldout(dirtDropdown, "Dirt"))
+				{
+					DrawEditor(DirtNoiseEditor, "Dirt");
+				}
 			}
 
 			if (SandNoiseEditor)
 			{
-				DrawEditor(SandNoiseEditor, "Sand");
+				if (sandDropdown = EditorGUILayout.Foldout(sandDropdown, "Sand"))
+				{
+					DrawEditor(SandNoiseEditor, "Sand");
+				}
 			}
 
 			if (GrassNoiseEditor)
 			{
-				DrawEditor(GrassNoiseEditor, "Grass");
+				if (grassDropdown = EditorGUILayout.Foldout(grassDropdown, "Grass"))
+				{
+					DrawEditor(GrassNoiseEditor, "Grass");
+				}
 			}
-			
+
 			if (EditorGUI.EndChangeCheck())
 			{
 				world.ValidateContext();
