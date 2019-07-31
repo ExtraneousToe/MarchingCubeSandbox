@@ -8,7 +8,7 @@ namespace CellWorld
 	{
 		private static Cell[] s_cubeCorners = new Cell[8];
 		public static float Surface { get; set; } = 0.0f;
-		
+
 		public static void MarchChunk(this Chunk chunk, IList<Vector3> verts, IList<int> indices, IList<Color> colours, bool useValue = false)
 		{
 			Cell[,,] cellGrid = chunk.CellGrid;
@@ -16,12 +16,12 @@ namespace CellWorld
 			int chunkSizeX = cellGrid.GetLength(0);
 			int chunkSizeY = cellGrid.GetLength(1);
 			int chunkSizeZ = cellGrid.GetLength(2);
-
-			for (int x = 0; x < chunkSizeX - 1; x++)
+			
+			for (int x = -1; x < chunkSizeX; x++)
 			{
-				for (int y = 0; y < chunkSizeY - 1; y++)
+				for (int y = -1; y < chunkSizeY; y++)
 				{
-					for (int z = 0; z < chunkSizeZ - 1; z++)
+					for (int z = -1; z < chunkSizeZ; z++)
 					{
 						for (int i = 0; i < 8; i++)
 						{
@@ -29,7 +29,17 @@ namespace CellWorld
 							int iy = y + VertexOffset[i, 1];
 							int iz = z + VertexOffset[i, 2];
 
-							s_cubeCorners[i] = cellGrid[ix, iy, iz];
+							try
+							{
+								s_cubeCorners[i] = cellGrid[ix, iy, iz];
+							}
+							catch (System.IndexOutOfRangeException)
+							{
+								s_cubeCorners[i] = chunk.World.GetCell(
+									chunk.ChunkIndex * chunk.World.ChunkSize + 
+									new Vector3Int(ix, iy, iz)
+								);
+							}
 						}
 
 						MarchCube(x, y, z, s_cubeCorners, verts, indices, colours, useValue);
@@ -66,7 +76,7 @@ namespace CellWorld
 					v0 = cube[EdgeConnection[i, 0]];
 					v1 = cube[EdgeConnection[i, 1]];
 
-					offset = GetOffset(v0.Value, v1.Value, useValues);
+					offset = GetOffset(v0?.Value ?? 0, v1?.Value ?? 0, useValues);
 
 					cubeUnderSurface[i] = IsWithinSurface(v0, useValues) ? v0 : v1;
 
@@ -103,6 +113,8 @@ namespace CellWorld
 		#region Utility
 		private static bool IsWithinSurface(Cell c, bool useValue = false)
 		{
+			if (c == null) return false;
+
 			if (useValue)
 			{
 				return c.Value <= Surface;

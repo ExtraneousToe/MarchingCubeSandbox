@@ -14,6 +14,7 @@ namespace CellWorld
 			[2] = Color.grey,
 			[3] = new Color(130 / 255f, 76 / 255f, 0),
 			[4] = Color.yellow,
+			[5] = Color.green,
 		};
 	}
 
@@ -23,7 +24,7 @@ namespace CellWorld
 	 * 2 = Rock
 	 * 3 = Dirt
 	 * 4 = Sand
-	 * 5 = ?
+	 * 5 = Grass
 	 * 
 	 */
 	 

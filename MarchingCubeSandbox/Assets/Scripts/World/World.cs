@@ -43,14 +43,15 @@ namespace CellWorld
 			get => Mathf.Max(m_verticalChunkCount, MIN_VERTICAL_CHUNKS);
 		}
 
-		private const int MIN_GENERATE_CHUNKS = 1;
+		private const int MIN_GENERATE_CHUNKS = 0;
 		[SerializeField]
-		private int m_chunkGenerateRange = 5;
+		private int m_chunkGenerateRange = 1;
 		public int ChunkGenerateRange
 		{
 			get => Mathf.Max(m_chunkGenerateRange, MIN_GENERATE_CHUNKS);
 		}
 
+		[SerializeField]
 		private readonly Dictionary<Vector3Int, Chunk> m_chunkDict = new Dictionary<Vector3Int, Chunk>();
 
 		[SerializeField]
@@ -76,6 +77,10 @@ namespace CellWorld
 		public NoiseLayerScriptable SandNoiseLayer => m_sandNoiseLayer;
 
 		[SerializeField]
+		private NoiseLayerScriptable m_grassNoiseLayer;
+		public NoiseLayerScriptable GrassNoiseLayer => m_grassNoiseLayer;
+
+		[SerializeField]
 		private Chunk m_chunkPrefab;
 		#endregion
 
@@ -96,8 +101,11 @@ namespace CellWorld
 			if (RockNoiseLayer) RockNoiseLayer.Initialise();
 			if (DirtNoiseLayer) DirtNoiseLayer.Initialise();
 			if (SandNoiseLayer) SandNoiseLayer.Initialise();
+			if (GrassNoiseLayer) GrassNoiseLayer.Initialise();
 
 			MarchCubes.Surface = m_surface;
+
+			PrefillCollections();
 
 			m_chunkList.ForEach(c => c?.Initialise(this, c.ChunkIndex));
 			m_chunkList.ForEach(c => c?.GenerateCells());
@@ -106,57 +114,64 @@ namespace CellWorld
 
 		private void Awake()
 		{
-
+			PrefillCollections();
 		}
 		#endregion
 
-		#region World Functions
-		public Vector3Int GetCellCoord(Vector3 worldPoint, CellWorldSpace space = CellWorldSpace.World)
+		private void PrefillCollections()
 		{
-			Vector3Int ret = Vector3Int.zero;
+			m_chunkList.Clear();
+			m_chunkDict.Clear();
 
-			for (int i = 0; i < 3; i++) ret[i] = Mathf.RoundToInt(worldPoint[i] * CellsPerUnit) % (space == CellWorldSpace.Chunk ? ChunkSize : 1);
+			List<Chunk> chunkChildren = new List<Chunk>(GetComponentsInChildren<Chunk>());
 
-			return ret;
+			chunkChildren.ForEach(c => {
+				m_chunkList.Add(c);
+				m_chunkDict.Add(c.ChunkIndex, c);
+			});
 		}
-		public Vector3Int GetCellCoord(Vector3Int worldCellIndex)
+
+		#region World Functions
+		#region Coordinates
+		public Vector3Int ConvertWorldToCell(Vector3 worldPoint)
 		{
 			Vector3Int ret = Vector3Int.zero;
 
-			for (int i = 0; i < 3; i++) ret[i] = worldCellIndex[i] % ChunkSize;
+			for (int i = 0; i < 3; i++) ret[i] = Mathf.RoundToInt(worldPoint[i] * CellsPerUnit);
 
 			return ret;
 		}
 
 		public Vector3Int GetChunkCoord(Vector3 worldPoint)
 		{
-			Vector3Int ret = Vector3Int.zero;
-
-			for (int i = 0; i < 3; i++) ret[i] = Mathf.FloorToInt(worldPoint[i] * CellsPerUnit / ChunkSize);
-
-			return ret;
+			return GetChunkCoord(ConvertWorldToCell(worldPoint));
 		}
 
 		public Vector3Int GetChunkCoord(Vector3Int worldCellIndex)
 		{
-			Vector3Int ret = Vector3Int.zero;
+			Vector3Int ret = worldCellIndex;
 
-			for (int i = 0; i < 3; i++) ret[i] = worldCellIndex[i] * CellsPerUnit / ChunkSize;
+			for (int i = 0; i < 3; i++) ret[i] = Mathf.FloorToInt(ret[i] / (float)ChunkSize);
 
 			return ret;
 		}
 
-		public void GenerateColumn(int chunkX, int chunkZ)
+		public Vector3Int GetCellChunkCoord(Vector3 worldPoint)
 		{
-			for (int y = 0; y < VerticalChunkCount; y++)
-			{
-				Chunk c = GetChunk(new Vector3Int(chunkX, y, chunkZ), true);
-#if UNITY_EDITOR
-				c?.Initialise(this, c.ChunkIndex);
-#endif
-			}
+			return GetCellChunkCoord(ConvertWorldToCell(worldPoint));
 		}
 
+		public Vector3Int GetCellChunkCoord(Vector3Int worldCellIndex)
+		{
+			Vector3Int ret = worldCellIndex;
+
+			for (int i = 0; i < 3; i++) ret[i] = (int)Mathf.Repeat(ret[i], ChunkSize);
+
+			return ret;
+		}
+		#endregion
+
+		#region ChunkAccess
 		public Chunk GetChunk(Vector3Int chunkXYZ, bool generateIfMissing = false)
 		{
 			if (!m_chunkDict.TryGetValue(chunkXYZ, out Chunk chunk))
@@ -165,25 +180,6 @@ namespace CellWorld
 			}
 
 			return chunk;
-		}
-
-		public Cell GetCellFromWorldPoint(Vector3 worldPoint)
-		{
-			return GetCellFromWorldPoint(GetCellCoord(worldPoint, CellWorldSpace.World));
-		}
-
-		public Cell GetCellFromWorldCellIndex(Vector3Int worldCellIndex)
-		{
-			Vector3Int chunkCoord = GetChunkCoord(worldCellIndex);
-
-			if (m_chunkDict.TryGetValue(chunkCoord, out Chunk chunk))
-			{
-				Vector3Int localCellCoord = GetCellCoord(worldCellIndex);
-
-				return chunk[localCellCoord];
-			}
-
-			return null;
 		}
 
 		private Chunk GenerateChunk(Vector3Int chunkXYZ)
@@ -197,6 +193,38 @@ namespace CellWorld
 
 			return chunk;
 		}
+		#endregion
+
+		#region CellAccess
+		public Cell GetCell(Vector3 worldPoint)
+		{
+			return GetCell(GetChunkCoord(worldPoint), GetCellChunkCoord(worldPoint));
+		}
+
+		public Cell GetCell(Vector3Int worldCellIndex)
+		{
+			return GetCell(GetChunkCoord(worldCellIndex), GetCellChunkCoord(worldCellIndex));
+		}
+
+		public Cell GetCell(Vector3Int chunkIndex, Vector3Int chunkCellIndex)
+		{
+			Chunk chunk = GetChunk(chunkIndex);
+
+			return chunk?[chunkCellIndex];
+		}
+		#endregion
+
+		#region Generation
+		public void GenerateColumn(int chunkX, int chunkZ)
+		{
+			for (int y = 0; y < VerticalChunkCount; y++)
+			{
+				Chunk c = GetChunk(new Vector3Int(chunkX, y, chunkZ), true);
+#if UNITY_EDITOR
+				c?.Initialise(this, c.ChunkIndex);
+#endif
+			}
+		}
 
 		public void ClearWorld()
 		{
@@ -208,6 +236,7 @@ namespace CellWorld
 			m_chunkDict.Clear();
 			m_chunkList.Clear();
 		}
+		#endregion
 		#endregion
 	}
 }

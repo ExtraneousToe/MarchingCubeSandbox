@@ -37,6 +37,7 @@ namespace CellWorld
 				catch (System.IndexOutOfRangeException ioore)
 				{
 					// throw for now
+					Debug.LogError($"[{ioore.GetType().Name}]: xyz == {xyz}");
 					throw ioore;
 				}
 			}
@@ -90,6 +91,7 @@ namespace CellWorld
 					float rockHeight = 0;
 					float dirtHeight = 0;
 					float sandHeight = 0;
+					float grassHeight = 0;
 
 					if (World.RockNoiseLayer)
 					{
@@ -102,16 +104,24 @@ namespace CellWorld
 					if (World.DirtNoiseLayer)
 					{
 						dirtHeight += World.DirtNoiseLayer.SampleValue(
-							worldX,
-							worldZ
+							worldX / (World.CellsPerUnit * World.ChunkSize),
+							worldZ / (World.CellsPerUnit * World.ChunkSize)
 						);
 					}
 
 					if (World.SandNoiseLayer)
 					{
 						sandHeight += World.SandNoiseLayer.SampleValue(
-							worldX,
-							worldZ
+							worldX / (World.CellsPerUnit * World.ChunkSize),
+							worldZ / (World.CellsPerUnit * World.ChunkSize)
+						);
+					}
+
+					if (World.GrassNoiseLayer)
+					{
+						grassHeight += World.GrassNoiseLayer.SampleValue(
+							worldX / (World.CellsPerUnit * World.ChunkSize),
+							worldZ / (World.CellsPerUnit * World.ChunkSize)
 						);
 					}
 
@@ -121,10 +131,7 @@ namespace CellWorld
 
 						Cell c = CellGrid[x, y, z];
 
-						if (//x == 0 || x == gridDimensions - 1 ||
-							worldY == 0 //||
-							//z == 0 || z == gridDimensions - 1
-							)
+						if (worldY == 0)
 						{
 							c.CellType = 0;
 							c.Value = 0;
@@ -146,6 +153,10 @@ namespace CellWorld
 							else if (worldY <= sandHeight)
 							{
 								c.CellType = 4;
+							}
+							else if (worldY <= grassHeight)
+							{
+								c.CellType = 5;
 							}
 							else
 							{

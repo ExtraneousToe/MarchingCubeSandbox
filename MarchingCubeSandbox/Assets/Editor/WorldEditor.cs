@@ -10,14 +10,21 @@ namespace CellWorld
 	{
 		private World world;
 
+		private bool rockDropdown = false;
 		private Editor rockNoiseEditor;
 		private Editor RockNoiseEditor => rockNoiseEditor ?? (rockNoiseEditor = world.RockNoiseLayer != null ? CreateEditor(world.RockNoiseLayer) : null);
 
+		private bool dirtDropdown = false;
 		private Editor dirtNoiseEditor;
 		private Editor DirtNoiseEditor => dirtNoiseEditor ?? (dirtNoiseEditor = world.DirtNoiseLayer != null ? CreateEditor(world.DirtNoiseLayer) : null);
 
+		private bool sandDropdown = false;
 		private Editor sandNoiseEditor;
 		private Editor SandNoiseEditor => sandNoiseEditor ?? (sandNoiseEditor = world.SandNoiseLayer != null ? CreateEditor(world.SandNoiseLayer) : null);
+
+		private bool grassDropdown = false;
+		private Editor grassNoiseEditor;
+		private Editor GrassNoiseEditor => grassNoiseEditor ?? (grassNoiseEditor = world.GrassNoiseLayer != null ? CreateEditor(world.GrassNoiseLayer) : null);
 
 		private void OnEnable()
 		{
@@ -52,6 +59,11 @@ namespace CellWorld
 				DrawEditor(SandNoiseEditor, "Sand");
 			}
 
+			if (GrassNoiseEditor)
+			{
+				DrawEditor(GrassNoiseEditor, "Grass");
+			}
+			
 			if (EditorGUI.EndChangeCheck())
 			{
 				world.ValidateContext();
