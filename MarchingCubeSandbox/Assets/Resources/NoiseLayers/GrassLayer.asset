@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 681f5e0fe5bc36d4a87274a5ac5f299a, type: 3}
   m_Name: GrassLayer
   m_EditorClassIdentifier: 
-  isEnabled: 1
+  isEnabled: 0
   m_noiseType: 0
   m_seed: 0
   m_octaves: 1

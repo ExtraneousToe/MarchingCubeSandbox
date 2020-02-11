@@ -17,6 +17,6 @@ MonoBehaviour:
   m_seed: 10
   m_octaves: 2
   m_frequency: 1
-  m_noiseAmplitude: 2
+  m_noiseAmplitude: 4
   m_fractalAmplitude: 2
   m_raiseHeight: 8
